@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Loomie — The Lingua Loom AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Inline SVG Favicon: botanical leaf with spark -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232d5016'/%3E%3Cellipse cx='32' cy='36' rx='13' ry='17' fill='%234e8a2e' transform='rotate(-15 32 36)'/%3E%3Cellipse cx='32' cy='36' rx='13' ry='17' fill='%236aaa45' transform='rotate(15 32 36)' opacity='.7'/%3E%3Ccircle cx='44' cy='18' r='8' fill='%23fdfaf5'/%3E%3Ctext x='44' y='22' text-anchor='middle' font-size='10' fill='%232d5016' font-family='serif' font-weight='bold'%3E✦%3C/text%3E%3C/svg%3E">
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  /* Brand palette — green, brown, beige */
+  --forest:    #2d5016;
+  --forest2:   #3d6b21;
+  --sage:      #5a8a3e;
+  --sage-light:#7aaa5a;
+  --sage-pale: #c8ddb8;
+  --brown:     #6b4226;
+  --brown2:    #8b5e3c;
+  --brown-pale:#d4b896;
+  --beige:     #faf6ee;
+  --beige2:    #f0e8d8;
+  --beige3:    #e4d8c4;
+  --cream:     #fdfaf5;
+  --gold:      #c8a456;
+  --gold-dim:  #a07c34;
+  --ink:       #2c1f0e;
+  --ink2:      #4a3520;
+  --muted:     #7a6650;
+  --muted2:    #a09078;
+  --border:    #ddd0b8;
+  --border2:   #ccc0a4;
+  --error:     #b03a2e;
+  --green-glow:rgba(45,80,22,0.12);
+  --gold-glow: rgba(200,164,86,0.18);
+}
+
+html,body{height:100%;height:100dvh}
+body{
+  font-family:'Jost',sans-serif;
+  background:var(--beige);
+  color:var(--ink);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+
+/* ══════════════════════════════════════
+   SETUP SCREEN
+══════════════════════════════════════ */
+#setup{
+  position:fixed;inset:0;z-index:999;
+  background:var(--beige);
+  display:flex;align-items:center;justify-content:center;
+  padding:20px;overflow-y:auto;
+}
+.setup-wrap{
+  max-width:480px;width:100%;
+  padding:40px 36px;
+  background:var(--cream);
+  border:1px solid var(--border);
+  border-radius:24px;
+  box-shadow:0 20px 60px rgba(44,31,14,0.10);
+  position:relative;overflow:hidden;
+}
+.setup-wrap::before{
+  content:'';position:absolute;top:-40px;right:-40px;
+  width:180px;height:180px;border-radius:50%;
+  background:radial-gradient(circle,rgba(90,138,62,0.12),transparent 70%);
+  pointer-events:none;
+}
+.setup-brand{
+  display:flex;align-items:center;gap:12px;margin-bottom:6px;
+}
+.setup-brand-avatar{width:52px;height:52px;flex-shrink:0}
+.setup-brand-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.5rem;color:var(--forest);font-weight:600;
+  line-height:1.1;
+}
+.setup-brand-name span{display:block;font-size:0.85rem;color:var(--muted);font-weight:400;font-style:italic}
+.setup-desc{
+  font-size:0.88rem;color:var(--muted);
+  line-height:1.6;margin-bottom:24px;margin-top:6px;
+}
+.setup-step{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:12px 14px;border-radius:12px;
+  background:var(--beige2);border:1px solid var(--border);
+  margin-bottom:8px;
+}
+.setup-num{
+  width:24px;height:24px;border-radius:50%;
+  background:var(--forest);color:white;
+  font-size:0.75rem;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.setup-step-body strong{display:block;font-size:0.87rem;color:var(--ink);margin-bottom:2px}
+.setup-step-body span{font-size:0.8rem;color:var(--muted);line-height:1.5}
+.setup-step-body a{color:var(--sage);font-weight:600;text-decoration:none}
+.setup-step-body a:hover{text-decoration:underline}
+.key-input{
+  width:100%;padding:13px 16px;
+  border:1.5px solid var(--border2);border-radius:10px;
+  background:var(--beige);
+  font-family:'Jost',sans-serif;font-size:0.92rem;
+  color:var(--ink);outline:none;
+  transition:border-color 0.2s,box-shadow 0.2s;
+  margin:14px 0 10px;
+}
+.key-input:focus{border-color:var(--forest);box-shadow:0 0 0 3px var(--green-glow)}
+.key-input::placeholder{color:var(--muted2)}
+.btn-enter{
+  width:100%;padding:14px;
+  background:var(--forest);color:white;
+  border:none;border-radius:10px;
+  font-family:'Jost',sans-serif;font-size:0.95rem;font-weight:600;
+  cursor:pointer;transition:all 0.2s;letter-spacing:0.3px;
+}
+.btn-enter:hover{background:var(--forest2);transform:translateY(-1px);box-shadow:0 6px 20px rgba(45,80,22,0.25)}
+.setup-free{text-align:center;margin-top:12px;font-size:0.78rem;color:var(--sage)}
+.setup-links{
+  display:flex;gap:12px;justify-content:center;
+  margin-top:16px;padding-top:16px;border-top:1px solid var(--border);
+}
+.setup-links a{
+  font-size:0.78rem;color:var(--muted);text-decoration:none;
+  transition:color 0.15s;
+}
+.setup-links a:hover{color:var(--forest)}
+
+/* ══════════════════════════════════════
+   MAIN APP
+══════════════════════════════════════ */
+#app{display:none;flex:1;min-height:0;flex-direction:row}
+#app.visible{display:flex}
+
+/* ══ SIDEBAR ══ */
+.sidebar{
+  width:272px;flex-shrink:0;
+  background:var(--cream);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+}
+.sidebar-top{
+  padding:16px 14px 12px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.sidebar-logo{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.05rem;color:var(--forest);font-weight:600;
+  flex:1;line-height:1.1;
+}
+.sidebar-logo span{display:block;font-size:0.72rem;color:var(--muted);font-weight:400;font-style:italic}
+.btn-new{
+  padding:7px 12px;
+  background:var(--forest);color:white;
+  border:none;border-radius:8px;
+  font-family:'Jost',sans-serif;font-size:0.78rem;font-weight:600;
+  cursor:pointer;transition:all 0.15s;white-space:nowrap;
+}
+.btn-new:hover{background:var(--forest2)}
+
+/* conv list */
+.conv-list{flex:1;overflow-y:auto;padding:8px 6px}
+.conv-list::-webkit-scrollbar{width:3px}
+.conv-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+.conv-group-label{
+  font-size:0.68rem;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:1.2px;font-weight:600;
+  padding:8px 8px 3px;
+}
+.conv-item{
+  display:flex;align-items:center;
+  padding:8px 10px;border-radius:9px;
+  cursor:pointer;transition:background 0.15s;
+  margin-bottom:1px;position:relative;
+}
+.conv-item:hover{background:var(--beige2)}
+.conv-item.active{background:var(--beige3)}
+.conv-item-name{
+  flex:1;font-size:0.83rem;color:var(--ink2);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+}
+.conv-item.active .conv-item-name{color:var(--forest);font-weight:500}
+.conv-dots{
+  width:24px;height:24px;border-radius:5px;
+  background:transparent;border:none;
+  color:var(--muted2);cursor:pointer;
+  display:none;align-items:center;justify-content:center;
+  font-size:1rem;flex-shrink:0;transition:all 0.15s;
+}
+.conv-item:hover .conv-dots,
+.conv-item.active .conv-dots{display:flex}
+.conv-dots:hover{background:var(--beige3);color:var(--ink)}
+
+/* sidebar bottom */
+.sidebar-bottom{
+  border-top:1px solid var(--border);
+  padding:12px 10px;
+}
+.sb-section{
+  font-size:0.68rem;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:1.2px;font-weight:600;
+  padding:0 4px;margin-bottom:5px;margin-top:10px;
+}
+.sb-section:first-child{margin-top:0}
+.mode-btn{
+  width:100%;text-align:left;
+  padding:8px 10px;border:none;border-radius:8px;
+  background:transparent;cursor:pointer;
+  font-family:'Jost',sans-serif;font-size:0.82rem;color:var(--ink2);
+  margin-bottom:2px;transition:all 0.15s;
+  display:flex;align-items:center;gap:9px;
+}
+.mode-btn:hover{background:var(--beige2);color:var(--ink)}
+.mode-btn.active{background:var(--sage-pale);color:var(--forest);font-weight:500}
+.mode-icon{font-size:1rem;flex-shrink:0}
+
+/* voice panel */
+.voice-toggle{
+  width:100%;text-align:left;padding:7px 10px;
+  border:none;border-radius:8px;background:transparent;
+  font-family:'Jost',sans-serif;font-size:0.81rem;color:var(--muted);
+  cursor:pointer;transition:all 0.15s;margin-top:2px;
+  display:flex;align-items:center;gap:7px;
+}
+.voice-toggle:hover{background:var(--beige2);color:var(--ink2)}
+.vp{display:none;padding:6px 4px 0}
+.vp.open{display:block}
+.vc-row{margin-bottom:7px}
+.vc-label{
+  display:flex;justify-content:space-between;
+  font-size:0.7rem;color:var(--muted2);
+  text-transform:uppercase;letter-spacing:0.8px;
+  margin-bottom:3px;font-weight:600;
+}
+.vc-sel,.vc-range{
+  width:100%;background:var(--beige);
+  border:1px solid var(--border);border-radius:6px;
+  font-family:'Jost',sans-serif;font-size:0.8rem;
+  color:var(--ink);outline:none;padding:6px 8px;
+}
+.vc-range{padding:3px 0;accent-color:var(--forest);border:none;background:transparent}
+
+/* external links */
+.sb-links{display:flex;flex-direction:column;gap:3px}
+.sb-link{
+  display:flex;align-items:center;gap:8px;
+  padding:7px 10px;border-radius:8px;
+  font-size:0.81rem;color:var(--muted);
+  text-decoration:none;transition:all 0.15s;border:none;
+  background:transparent;cursor:pointer;width:100%;
+  font-family:'Jost',sans-serif;
+}
+.sb-link:hover{background:var(--beige2);color:var(--forest)}
+.sb-link-icon{font-size:0.95rem;flex-shrink:0}
+
+.btn-change-key{
+  width:100%;text-align:left;padding:7px 10px;
+  border:none;border-radius:8px;background:transparent;
+  font-family:'Jost',sans-serif;font-size:0.78rem;
+  color:var(--muted2);cursor:pointer;transition:all 0.15s;
+  display:flex;align-items:center;gap:7px;margin-top:4px;
+}
+.btn-change-key:hover{color:var(--error);background:rgba(176,58,46,0.07)}
+
+/* ══ CHAT AREA ══ */
+.chat-area{
+  flex:1;display:flex;flex-direction:column;
+  overflow:hidden;min-height:0;
+}
+
+/* header */
+.chat-header{
+  padding:12px 22px;
+  border-bottom:1px solid var(--border);
+  background:var(--cream);
+  display:flex;align-items:center;gap:12px;
+  flex-shrink:0;
+}
+.btn-hamburger{
+  display:none;background:transparent;border:none;
+  cursor:pointer;font-size:1.2rem;color:var(--muted);
+  padding:4px 6px;border-radius:7px;transition:background 0.15s;
+  align-items:center;justify-content:center;
+}
+.btn-hamburger:hover{background:var(--beige2)}
+.header-loomie{display:flex;align-items:center;gap:10px;flex:1}
+.header-avatar{width:40px;height:40px;flex-shrink:0}
+.header-name{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.05rem;color:var(--forest);font-weight:600;line-height:1.1;
+}
+.header-name span{
+  display:block;font-size:0.72rem;color:var(--muted);
+  font-family:'Jost',sans-serif;font-style:normal;font-weight:400;
+}
+.status-pill{
+  display:flex;align-items:center;gap:6px;
+  background:var(--beige2);padding:5px 12px;border-radius:20px;
+  border:1px solid var(--border);font-size:0.74rem;color:var(--muted);
+  flex-shrink:0;
+}
+.s-dot{
+  width:6px;height:6px;border-radius:50%;
+  background:var(--sage);flex-shrink:0;
+}
+.s-dot.thinking{background:var(--gold);animation:blink .8s infinite}
+.s-dot.speaking{background:var(--brown2);animation:blink .6s infinite}
+.s-dot.listening{background:var(--error);animation:blink .5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* messages */
+.messages{
+  flex:1;overflow-y:auto;min-height:0;
+  padding:24px 20px;
+  display:flex;flex-direction:column;gap:18px;
+  scroll-behavior:smooth;
+}
+.messages::-webkit-scrollbar{width:4px}
+.messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* intro card */
+.intro-card{
+  background:linear-gradient(135deg,var(--forest) 0%,var(--forest2) 60%,#4a7832 100%);
+  border-radius:20px;padding:28px 24px;
+  display:flex;gap:20px;align-items:flex-start;
+  border:1px solid var(--forest);
+  box-shadow:0 4px 24px rgba(45,80,22,0.18);
+  position:relative;overflow:hidden;
+}
+.intro-card::after{
+  content:'✦';position:absolute;bottom:16px;right:20px;
+  color:rgba(255,255,255,0.15);font-size:1.8rem;
+}
+.intro-avatar-lg{width:80px;height:80px;flex-shrink:0}
+.intro-text h2{
+  font-family:'Cormorant Garamond',serif;
+  font-size:1.4rem;color:#e8f0e0;margin-bottom:6px;font-weight:600;
+}
+.intro-text h2 span{color:#c8ddb8;font-style:italic}
+.intro-text p{font-size:0.87rem;color:#b8d0a8;line-height:1.75}
+.intro-modes{
+  display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;
+}
+.intro-mode-tag{
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.2);
+  color:#d8ecc8;font-size:0.74rem;
+  padding:4px 11px;border-radius:20px;font-weight:500;
+}
+
+/* messages */
+.msg{display:flex;gap:10px;animation:msgIn .25s ease}
+@keyframes msgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg.user{flex-direction:row-reverse}
+.msg.ai{flex-direction:row}
+
+.msg-avatar{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:0.85rem;flex-shrink:0;margin-top:2px;overflow:hidden;
+}
+.msg.user .msg-avatar{background:var(--brown2)}
+.msg.user .msg-avatar span{color:white;font-size:0.9rem}
+.msg.ai .msg-avatar{background:transparent;width:34px;height:34px}
+
+.bwrap{max-width:78%;display:flex;flex-direction:column;gap:4px}
+.msg.user .bwrap{align-items:flex-end}
+.msg.ai   .bwrap{align-items:flex-start}
+
+.bubble{
+  padding:11px 16px;border-radius:16px;
+  font-size:0.9rem;line-height:1.78;
+  transition:box-shadow 0.2s;position:relative;
+}
+.msg.user .bubble{
+  background:var(--forest);color:#e8f0e0;
+  border-bottom-right-radius:4px;
+}
+.msg.ai .bubble{
+  background:var(--cream);
+  border:1px solid var(--border);
+  border-bottom-left-radius:4px;
+  color:var(--ink2);cursor:pointer;
+}
+.msg.ai .bubble:hover{border-color:var(--sage);box-shadow:0 0 0 3px var(--green-glow)}
+.msg.ai .bubble.playing{border-color:var(--forest);box-shadow:0 0 0 3px var(--green-glow)}
+.spk-hint{
+  position:absolute;top:7px;right:9px;
+  font-size:0.68rem;color:var(--muted2);
+  opacity:0;transition:opacity 0.2s;pointer-events:none;
+}
+.msg.ai .bubble:hover .spk-hint{opacity:1}
+.msg.ai .bubble.playing .spk-hint{opacity:1;color:var(--forest)}
+
+.fb-tag{
+  display:inline-flex;align-items:center;gap:4px;
+  background:rgba(90,138,62,0.1);
+  border:1px solid rgba(90,138,62,0.25);
+  color:var(--sage);font-size:0.72rem;
+  padding:3px 10px;border-radius:20px;
+  margin-top:6px;font-weight:500;
+}
+
+/* typing */
+.typing-wrap{
+  display:flex;gap:4px;align-items:center;
+  padding:12px 16px;
+  background:var(--cream);border:1px solid var(--border);
+  border-radius:16px;border-bottom-left-radius:4px;
+  width:fit-content;
+}
+.td{width:6px;height:6px;border-radius:50%;background:var(--muted2);animation:td 1.2s infinite}
+.td:nth-child(2){animation-delay:.2s}
+.td:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-5px)}}
+
+/* ══ INPUT BAR ══ */
+.input-bar{
+  padding:12px 20px 14px;
+  border-top:1px solid var(--border);
+  background:var(--cream);flex-shrink:0;
+  padding-bottom:max(14px,env(safe-area-inset-bottom));
+}
+.transcript{
+  background:var(--beige2);
+  border:1px dashed var(--border2);
+  border-radius:9px;padding:7px 13px;
+  font-size:0.82rem;color:var(--muted2);
+  min-height:32px;margin-bottom:9px;
+  font-style:italic;transition:all 0.25s;
+  display:flex;align-items:center;gap:8px;
+}
+.transcript.live{
+  border-style:solid;border-color:var(--forest);
+  color:var(--ink);font-style:normal;
+  box-shadow:0 0 0 3px var(--green-glow);background:var(--beige);
+}
+.tr-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--error);flex-shrink:0;
+  animation:blink .5s infinite;display:none;
+}
+.transcript.live .tr-dot{display:block}
+.input-row{display:flex;gap:8px;align-items:center}
+.text-in{
+  flex:1;padding:11px 15px;
+  background:var(--beige);
+  border:1.5px solid var(--border2);border-radius:10px;
+  font-family:'Jost',sans-serif;font-size:0.88rem;color:var(--ink);
+  outline:none;transition:all 0.2s;
+}
+.text-in:focus{border-color:var(--forest);box-shadow:0 0 0 3px var(--green-glow);background:var(--cream)}
+.text-in::placeholder{color:var(--muted2)}
+.ibtn{
+  border:none;cursor:pointer;border-radius:50%;
+  width:44px;height:44px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.1rem;transition:all 0.2s;
+}
+.ibtn-mic{
+  background:var(--forest);color:white;
+  box-shadow:0 4px 14px rgba(45,80,22,0.3);
+}
+.ibtn-mic:hover{background:var(--forest2);transform:scale(1.05)}
+.ibtn-mic.on{background:var(--error);animation:mpulse 1s infinite}
+@keyframes mpulse{0%{box-shadow:0 0 0 0 rgba(176,58,46,.45)}70%{box-shadow:0 0 0 10px rgba(176,58,46,0)}100%{box-shadow:0 0 0 0 rgba(176,58,46,0)}}
+.btn-send{
+  padding:0 18px;height:44px;border:none;border-radius:10px;
+  background:var(--beige3);color:var(--ink2);
+  font-family:'Jost',sans-serif;font-size:0.85rem;font-weight:600;
+  cursor:pointer;transition:all 0.2s;
+  border:1.5px solid var(--border2);
+}
+.btn-send:hover{background:var(--forest);color:white;border-color:var(--forest)}
+.ibtn-audio{
+  background:var(--beige);color:var(--muted);
+  border:1.5px solid var(--border2);
+}
+.ibtn-audio:hover{color:var(--ink);border-color:var(--muted2)}
+.ibtn-audio.playing{background:var(--sage-pale);color:var(--forest);border-color:var(--forest)}
+.ibtn-audio:disabled{opacity:.35;cursor:not-allowed}
+
+/* dropdown */
+.dropdown{
+  position:fixed;z-index:500;
+  background:var(--cream);border:1px solid var(--border);
+  border-radius:10px;padding:6px;min-width:148px;
+  box-shadow:0 8px 24px rgba(44,31,14,0.12);display:none;
+}
+.dropdown.show{display:block}
+.dd-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 12px;border-radius:7px;
+  cursor:pointer;font-size:0.84rem;color:var(--ink2);
+  transition:background 0.15s;
+}
+.dd-item:hover{background:var(--beige2)}
+.dd-item.danger{color:var(--error)}
+.dd-item.danger:hover{background:rgba(176,58,46,0.08)}
+
+/* confirm */
+.confirm-overlay{
+  position:fixed;inset:0;z-index:600;
+  background:rgba(44,31,14,0.4);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;
+}
+.confirm-overlay.show{display:flex}
+.confirm-box{
+  background:var(--cream);border:1px solid var(--border);
+  border-radius:16px;padding:24px;max-width:310px;width:90%;
+  box-shadow:0 16px 40px rgba(44,31,14,0.14);
+}
+.confirm-box h4{font-size:0.95rem;color:var(--ink);margin-bottom:8px}
+.confirm-box p{font-size:0.82rem;color:var(--muted);margin-bottom:18px;line-height:1.55}
+.confirm-btns{display:flex;gap:8px;justify-content:flex-end}
+.cbtn{
+  padding:8px 16px;border:none;border-radius:8px;
+  font-family:'Jost',sans-serif;font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;
+}
+.cbtn-cancel{background:var(--beige2);color:var(--ink2);border:1px solid var(--border)}
+.cbtn-cancel:hover{background:var(--beige3)}
+.cbtn-del{background:rgba(176,58,46,0.1);color:var(--error);border:1px solid rgba(176,58,46,0.25)}
+.cbtn-del:hover{background:var(--error);color:white}
+
+/* toast */
+.toast{
+  position:fixed;bottom:20px;left:50%;
+  transform:translateX(-50%) translateY(10px);
+  background:var(--ink);color:var(--beige);
+  padding:9px 16px;border-radius:10px;font-size:0.82rem;
+  box-shadow:0 8px 24px rgba(44,31,14,0.18);
+  opacity:0;pointer-events:none;transition:all 0.3s;
+  z-index:800;white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* mobile drawer overlay */
+.sb-overlay{
+  display:none;position:fixed;inset:0;z-index:200;
+  background:rgba(44,31,14,0.4);backdrop-filter:blur(2px);
+}
+.sb-overlay.show{display:block}
+
+/* ══ MOBILE ══ */
+@media(max-width:700px){
+  .btn-hamburger{display:flex}
+  .sidebar{
+    position:fixed;left:-280px;top:0;bottom:0;z-index:300;
+    width:272px;transition:left 0.28s cubic-bezier(0.4,0,0.2,1);
+  }
+  .sidebar.open{left:0;box-shadow:4px 0 24px rgba(44,31,14,0.15)}
+  #app.visible{flex-direction:row}
+  .chat-area{width:100%;min-height:0}
+  .chat-header{padding:10px 12px}
+  .header-avatar{width:34px;height:34px}
+  .header-name{font-size:0.92rem}
+  .header-name span{font-size:0.68rem}
+  .status-pill{padding:4px 9px;font-size:0.7rem}
+  .messages{padding:12px 10px}
+  .bwrap{max-width:90%}
+  .bubble{font-size:0.86rem;padding:10px 13px}
+  .intro-card{flex-direction:column;padding:20px 18px;gap:14px}
+  .intro-avatar-lg{width:60px;height:60px}
+  .intro-text h2{font-size:1.15rem}
+  .intro-text p{font-size:0.83rem}
+  .input-bar{padding:9px 11px;padding-bottom:max(10px,env(safe-area-inset-bottom))}
+  .transcript{font-size:0.78rem;padding:6px 10px;margin-bottom:7px;min-height:30px}
+  .input-row{gap:6px}
+  .ibtn-mic{width:42px;height:42px;font-size:1rem}
+  .text-in{font-size:16px;padding:10px 11px}
+  .btn-send{padding:0 12px;height:42px;font-size:0.79rem}
+  .ibtn-audio{width:42px;height:42px;font-size:1rem}
+  #setup{padding:16px;align-items:flex-start;padding-top:32px}
+  .setup-wrap{padding:24px 18px;border-radius:18px}
+  .setup-brand-name{font-size:1.25rem}
+  .setup-step{padding:10px 12px}
+  .key-input{font-size:16px;padding:12px 13px}
+  .toast{max-width:90vw;white-space:normal;text-align:center;bottom:70px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════ LOOMIE AVATAR SVG (reusable) ══════════
+     Brown-skinned girl, brown hair, green scholarly outfit
+     Simple, warm, non-sexualized academic character
+-->
+<svg style="display:none">
+  <symbol id="loomie-avatar" viewBox="0 0 100 100">
+    <!-- Background circle -->
+    <circle cx="50" cy="50" r="50" fill="#e8f0de"/>
+    <!-- Hair back layer -->
+    <ellipse cx="50" cy="38" rx="22" ry="24" fill="#4a2c10"/>
+    <!-- Hair sides flowing down -->
+    <ellipse cx="28" cy="52" rx="8" ry="18" fill="#4a2c10"/>
+    <ellipse cx="72" cy="52" rx="8" ry="18" fill="#4a2c10"/>
+    <!-- Neck -->
+    <rect x="44" y="63" width="12" height="10" rx="4" fill="#a07050"/>
+    <!-- Body / outfit — green blouse -->
+    <ellipse cx="50" cy="88" rx="26" ry="16" fill="#3d6b21"/>
+    <!-- Collar detail -->
+    <path d="M44 73 Q50 78 56 73 L58 80 Q50 85 42 80 Z" fill="#2d5016"/>
+    <!-- Face -->
+    <ellipse cx="50" cy="47" rx="18" ry="19" fill="#b07848"/>
+    <!-- Face shading — cheeks -->
+    <ellipse cx="38" cy="52" rx="5" ry="3" fill="#c89068" opacity=".5"/>
+    <ellipse cx="62" cy="52" rx="5" ry="3" fill="#c89068" opacity=".5"/>
+    <!-- Eyes -->
+    <ellipse cx="43" cy="46" rx="3.5" ry="4" fill="#2c1a08"/>
+    <ellipse cx="57" cy="46" rx="3.5" ry="4" fill="#2c1a08"/>
+    <!-- Eye shine -->
+    <circle cx="44.5" cy="44.5" r="1.2" fill="white"/>
+    <circle cx="58.5" cy="44.5" r="1.2" fill="white"/>
+    <!-- Eyebrows -->
+    <path d="M39 41 Q43 39.5 47 41" stroke="#3a1e08" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <path d="M53 41 Q57 39.5 61 41" stroke="#3a1e08" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    <!-- Nose -->
+    <ellipse cx="50" cy="51" rx="2.5" ry="1.5" fill="#8a5830"/>
+    <!-- Smile -->
+    <path d="M44 56 Q50 61 56 56" stroke="#7a4020" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+    <!-- Hair top / fringe -->
+    <path d="M28 42 Q35 28 50 26 Q65 28 72 42" fill="#4a2c10"/>
+    <!-- Small leaf hair pin -->
+    <ellipse cx="68" cy="34" rx="5" ry="3" fill="#4e8a2e" transform="rotate(-30 68 34)"/>
+    <line x1="66" y1="36" x2="70" y2="32" stroke="#3d6b21" stroke-width="1"/>
+  </symbol>
+</svg>
+
+<!-- ══════════ SETUP SCREEN ══════════ -->
+<div id="setup">
+  <div class="setup-wrap">
+    <div class="setup-brand">
+      <svg class="setup-brand-avatar" viewBox="0 0 100 100"><use href="#loomie-avatar"/></svg>
+      <div class="setup-brand-name">
+        Loomie
+        <span>by The Lingua Loom</span>
+      </div>
+    </div>
+    <p class="setup-desc">
+      Your AI companion for Linguistics, Literature &amp; English — scholarly, warm, and always ready to explore ideas with you.
+    </p>
+
+    <div class="setup-step">
+      <div class="setup-num">1</div>
+      <div class="setup-step-body">
+        <strong>Go to console.groq.com</strong>
+        <span>Sign up free — no credit card needed.<br>
+        <a href="https://console.groq.com" target="_blank">👉 console.groq.com</a></span>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-num">2</div>
+      <div class="setup-step-body">
+        <strong>Create a free API Key</strong>
+        <span>Dashboard → <b>API Keys</b> → <b>Create API Key</b> → copy it<br>
+        (starts with <code style="background:var(--beige3);padding:1px 5px;border-radius:3px;font-size:0.78em">gsk_...</code>)</span>
+      </div>
+    </div>
+    <div class="setup-step">
+      <div class="setup-num">3</div>
+      <div class="setup-step-body">
+        <strong>Paste below — 1,000 free messages/day</strong>
+        <span>Your key stays in your browser only. Never shared.</span>
+      </div>
+    </div>
+
+    <input class="key-input" id="keyInput" type="password"
+      placeholder="Paste your Groq key here  (gsk_...)"
+      onkeydown="if(event.key==='Enter')startApp()">
+    <button class="btn-enter" onclick="startApp()">Talk to Loomie →</button>
+    <p class="setup-free">✦ 100% Free · No credit card · No payment · Ever</p>
+
+    <div class="setup-links">
+      <a href="https://thelingualloom.com" target="_blank">🌿 The Lingua Loom</a>
+      <a href="https://thelingualloom.com/workshop" target="_blank">🔬 Loom Workshop</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ MAIN APP ══════════ -->
+<div id="app">
+
+  <!-- Mobile overlay -->
+  <div class="sb-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+
+  <!-- ══ SIDEBAR ══ -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-top">
+      <div class="sidebar-logo">
+        Loomie
+        <span>by The Lingua Loom</span>
+      </div>
+      <button class="btn-new" onclick="newConversation()">✦ New</button>
+    </div>
+
+    <div class="conv-list" id="convList"></div>
+
+    <div class="sidebar-bottom">
+      <div class="sb-section">Ask Loomie About</div>
+      <button class="mode-btn active" onclick="setMode('linguistics')" id="mb-linguistics">
+        <span class="mode-icon">🔬</span>Linguistics
+      </button>
+      <button class="mode-btn" onclick="setMode('literature')" id="mb-literature">
+        <span class="mode-icon">📖</span>Literature & Film
+      </button>
+      <button class="mode-btn" onclick="setMode('english')" id="mb-english">
+        <span class="mode-icon">🗣️</span>English Tutor
+      </button>
+
+      <div class="sb-section" style="margin-top:10px">Voice</div>
+      <button class="voice-toggle" onclick="toggleVP()">⚙ Settings <span id="vpArr">▾</span></button>
+      <div class="vp" id="vp">
+        <div class="vc-row">
+          <div class="vc-label"><span>Voice</span></div>
+          <select class="vc-sel" id="voiceSel"><option>Loading…</option></select>
+        </div>
+        <div class="vc-row">
+          <div class="vc-label"><span>Speed</span><span id="rateVal">1.0×</span></div>
+          <input class="vc-range" type="range" id="rateR" min="0.6" max="1.6" step="0.1" value="1.0"
+            oninput="document.getElementById('rateVal').textContent=this.value+'×'">
+        </div>
+        <div class="vc-row">
+          <div class="vc-label"><span>Pitch</span><span id="pitchVal">1.0</span></div>
+          <input class="vc-range" type="range" id="pitchR" min="0.7" max="1.4" step="0.1" value="1.0"
+            oninput="document.getElementById('pitchVal').textContent=this.value">
+        </div>
+      </div>
+
+      <div class="sb-section" style="margin-top:10px">Explore</div>
+      <div class="sb-links">
+        <a class="sb-link" href="https://thelingualloom.com" target="_blank">
+          <span class="sb-link-icon">🌿</span>The Lingua Loom
+        </a>
+        <a class="sb-link" href="https://thelingualloom.com/workshop" target="_blank">
+          <span class="sb-link-icon">🔬</span>The Loom Workshop
+        </a>
+      </div>
+
+      <button class="btn-change-key" onclick="changeKey()">⬡ Change API Key</button>
+    </div>
+  </div>
+
+  <!-- ══ CHAT ══ -->
+  <div class="chat-area">
+    <div class="chat-header">
+      <button class="btn-hamburger" onclick="openSidebar()">☰</button>
+      <div class="header-loomie">
+        <svg class="header-avatar" viewBox="0 0 100 100"><use href="#loomie-avatar"/></svg>
+        <div class="header-name">
+          Loomie
+          <span id="headerMode">Linguistics · Literature · English</span>
+        </div>
+      </div>
+      <div class="status-pill">
+        <div class="s-dot" id="sDot"></div>
+        <span id="sTxt">Ready</span>
+      </div>
+    </div>
+
+    <div class="messages" id="messages">
+      <!-- intro rendered by JS -->
+    </div>
+
+    <div class="input-bar">
+      <div class="transcript" id="transcript">
+        <span id="trTxt">🎙 Press the mic and speak…</span>
+        <div class="tr-dot"></div>
+      </div>
+      <div class="input-row">
+        <button class="ibtn ibtn-mic" id="micBtn" onclick="toggleMic()">🎤</button>
+        <input class="text-in" id="textIn" type="text"
+          placeholder="Ask Loomie anything…"
+          onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="btn-send" onclick="sendMessage()">Send ↗</button>
+        <button class="ibtn ibtn-audio" id="audioBtn" onclick="toggleAudio()" disabled title="Play / Stop">🔊</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Dropdown -->
+<div class="dropdown" id="dropdown">
+  <div class="dd-item" onclick="renameConv()">✎ &nbsp;Rename</div>
+  <div class="dd-item danger" onclick="deleteConfirm()">✕ &nbsp;Delete</div>
+</div>
+
+<!-- Confirm -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h4>Delete Conversation?</h4>
+    <p>This conversation will be permanently removed from your device.</p>
+    <div class="confirm-btns">
+      <button class="cbtn cbtn-cancel" onclick="closeConfirm()">Cancel</button>
+      <button class="cbtn cbtn-del" onclick="deleteConvDo()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+// ── CONFIG ───────────────────────────────────────────────
+const GROQ_URL   = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = 'llama-3.3-70b-versatile';
+
+// ── MODE PROMPTS ─────────────────────────────────────────
+const MODES = {
+  linguistics:{
+    label:'Linguistics',
+    header:'Linguistics Mode',
+    prompt:`You are Loomie, a warm and brilliant linguistics instructor created by The Lingua Loom. You have deep expertise in all areas of linguistics: morphology, phonology, syntax, semantics, pragmatics, discourse analysis, sociolinguistics, psycholinguistics, corpus linguistics, and language acquisition. You are especially strong in Optimality Theory, non-concatenative morphology, generative grammar, and conceptual metaphor theory.
+
+When answering, be scholarly yet approachable. Use clear examples, analogies, and diagrams in text form when helpful. Cite relevant linguists and frameworks by name. For technical questions, be precise; for curious learners, be encouraging and accessible.
+
+Never reproduce copyrighted texts. You may quote very short phrases (under 15 words) for analysis purposes only.
+
+Always sign off warmly as Loomie. Keep responses focused and well-structured.`
+  },
+  literature:{
+    label:'Literature & Film',
+    header:'Literature & Film Mode',
+    prompt:`You are Loomie, a passionate literature and film studies instructor created by The Lingua Loom. You love discussing novels, poetry, plays, short stories, and films with depth and enthusiasm.
+
+You can discuss themes, characters, narrative structure, symbolism, genre, authorial intent, historical context, and critical theory. You're equally at home with classical literature, contemporary fiction, postcolonial writing, and world cinema.
+
+When discussing a book or film, engage like a thoughtful reading circle facilitator — ask questions back, offer multiple interpretations, and encourage critical thinking.
+
+IMPORTANT: Never reproduce substantial copyrighted text. Discuss, analyze, paraphrase, and quote only short phrases (under 15 words) when necessary for analysis.
+
+Be warm, intellectually curious, and slightly literary in your own voice. You are Loomie — always.`
+  },
+  english:{
+    label:'English Tutor',
+    header:'English Tutor Mode',
+    prompt:`You are Loomie, a friendly and expert English language tutor created by The Lingua Loom. You help learners with grammar, vocabulary, pronunciation, writing, speaking confidence, and exam preparation (especially IELTS).
+
+When a student shares something, respond naturally AND gently note 1-2 grammar or vocabulary improvements if any exist — put these in [Feedback: ...] at the very end of your response.
+
+For grammar questions: explain the rule clearly with examples.
+For vocabulary: give definition, usage example, and a memory tip.
+For pronunciation: use simple phonetic spelling like "GEN-er-ous".
+For IELTS practice: evaluate on Fluency, Vocabulary, Grammar, Pronunciation with band score estimates.
+
+Be encouraging, patient, and warm. Every learner is valid. You are Loomie — always.`
+  }
+};
+
+// ── STATE ────────────────────────────────────────────────
+let apiKey        = localStorage.getItem('loomie_key') || '';
+let conversations = JSON.parse(localStorage.getItem('loomie_convs') || '[]');
+let currentId     = localStorage.getItem('loomie_cur') || null;
+let currentMode   = 'linguistics';
+let isListening   = false;
+let recognition   = null;
+let synth         = window.speechSynthesis;
+let voices        = [];
+let isSpeaking    = false;
+let playingBubble = null;
+let ddTargetId    = null;
+
+// ── BOOT ─────────────────────────────────────────────────
+window.onload = () => {
+  loadVoices();
+  if (apiKey) bootApp();
+};
+
+function bootApp() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('app').classList.add('visible');
+  renderConvList();
+  if (currentId && getConv(currentId)) loadConv(currentId);
+  else newConversation();
+}
+
+function startApp() {
+  const k = document.getElementById('keyInput').value.trim();
+  if (!k.startsWith('gsk_')) { showToast('⚠️ Invalid key — must start with gsk_'); return; }
+  apiKey = k;
+  localStorage.setItem('loomie_key', k);
+  bootApp();
+}
+
+function changeKey() {
+  localStorage.removeItem('loomie_key');
+  apiKey = '';
+  document.getElementById('setup').style.display = 'flex';
+  document.getElementById('app').classList.remove('visible');
+  document.getElementById('keyInput').value = '';
+  synth.cancel();
+}
+
+// ── CONVERSATIONS ─────────────────────────────────────────
+function saveConvs() { localStorage.setItem('loomie_convs', JSON.stringify(conversations)); }
+function getConv(id) { return conversations.find(c => c.id === id); }
+
+function newConversation() {
+  const id = 'c_' + Date.now();
+  const conv = { id, name:'New Conversation', mode: currentMode, messages:[], createdAt: Date.now() };
+  conversations.unshift(conv);
+  saveConvs();
+  currentId = id;
+  localStorage.setItem('loomie_cur', id);
+  renderConvList();
+  renderMessages(conv);
+  document.getElementById('headerMode').textContent = MODES[currentMode].header;
+  closeSidebar();
+}
+
+function loadConv(id) {
+  const conv = getConv(id);
+  if (!conv) return;
+  currentId = id;
+  currentMode = conv.mode || 'linguistics';
+  localStorage.setItem('loomie_cur', id);
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('mb-' + currentMode)?.classList.add('active');
+  document.getElementById('headerMode').textContent = MODES[currentMode].header;
+  renderMessages(conv);
+  renderConvList();
+  closeSidebar();
+}
+
+function renderConvList() {
+  const list = document.getElementById('convList');
+  if (!conversations.length) {
+    list.innerHTML = `<div style="padding:18px 8px;text-align:center;font-size:0.8rem;color:var(--muted2)">No conversations yet</div>`;
+    return;
+  }
+  const day = 86400000;
+  const now = Date.now();
+  const groups = [
+    { label:'Today',     items: conversations.filter(c => now - c.createdAt < day) },
+    { label:'Yesterday', items: conversations.filter(c => now - c.createdAt >= day && now - c.createdAt < 2*day) },
+    { label:'Older',     items: conversations.filter(c => now - c.createdAt >= 2*day) }
+  ];
+  let html = '';
+  groups.forEach(g => {
+    if (!g.items.length) return;
+    html += `<div class="conv-group-label">${g.label}</div>`;
+    g.items.forEach(c => {
+      const act = c.id === currentId ? 'active' : '';
+      html += `<div class="conv-item ${act}" data-id="${c.id}">
+        <div class="conv-item-name">${esc(c.name)}</div>
+        <button class="conv-dots" data-id="${c.id}">⋯</button>
+      </div>`;
+    });
+  });
+  list.innerHTML = html;
+  list.querySelectorAll('.conv-item').forEach(el => {
+    el.addEventListener('click', e => { if (!e.target.closest('.conv-dots')) loadConv(el.dataset.id); });
+  });
+  list.querySelectorAll('.conv-dots').forEach(el => {
+    el.addEventListener('click', e => { e.stopPropagation(); openDD(el.dataset.id, el); });
+  });
+}
+
+function renderMessages(conv) {
+  const c = document.getElementById('messages');
+  if (!conv.messages.length) {
+    c.innerHTML = '';
+    c.appendChild(buildIntroCard());
+    return;
+  }
+  c.innerHTML = '';
+  conv.messages.forEach(m => appendBubble(m.role, m.text, false));
+  c.scrollTop = c.scrollHeight;
+}
+
+function buildIntroCard() {
+  const div = document.createElement('div');
+  div.className = 'intro-card';
+  div.innerHTML = `
+    <svg class="intro-avatar-lg" viewBox="0 0 100 100"><use href="#loomie-avatar"/></svg>
+    <div class="intro-text">
+      <h2>Hello! I'm <span>Loomie</span> 🌿<br><small style="font-family:'Jost',sans-serif;font-size:0.65rem;font-style:normal;color:#9dc9a0;font-weight:400">by The Lingua Loom</small></h2>
+      <p>I'm your AI companion for all things language and literature. Ask me about linguistic theory, discuss a book or film, or practice your English — I'm here for all of it!</p>
+      <div class="intro-modes">
+        <span class="intro-mode-tag">🔬 Linguistics</span>
+        <span class="intro-mode-tag">📖 Literature & Film</span>
+        <span class="intro-mode-tag">🗣️ English Tutor</span>
+      </div>
+    </div>`;
+  return div;
+}
+
+// ── SEND / API ────────────────────────────────────────────
+async function sendMessage() {
+  const inp  = document.getElementById('textIn');
+  const text = inp.value.trim();
+  if (!text) return;
+  inp.value = '';
+  resetTranscript();
+
+  const conv = getConv(currentId);
+  if (!conv) return;
+
+  // Auto-name from first message
+  if (!conv.messages.length) {
+    conv.name = text.length > 40 ? text.slice(0,40)+'…' : text;
+    saveConvs(); renderConvList();
+  }
+
+  conv.messages.push({ role:'user', text, ts: Date.now() });
+  saveConvs();
+  appendBubble('user', text);
+
+  const tid = appendTyping();
+  setStatus('thinking','Thinking…');
+
+  try {
+    const reply = await callGroq(text, conv);
+    removeTyping(tid);
+    conv.messages.push({ role:'ai', text: reply, ts: Date.now() });
+    saveConvs();
+    const bub = appendBubble('ai', reply);
+    setStatus('ready','Ready');
+    speakText(reply, bub);
+  } catch(err) {
+    removeTyping(tid);
+    appendBubble('ai','⚠️ ' + (err.message || 'Something went wrong. Check your API key.'));
+    setStatus('ready','Error');
+    showToast(err.message || 'API error');
+  }
+}
+
+async function callGroq(userMsg, conv) {
+  const sys = MODES[currentMode]?.prompt || MODES.linguistics.prompt;
+  const history = (conv.messages || []).slice(-14).map(m => ({
+    role: m.role === 'user' ? 'user' : 'assistant',
+    content: m.text
+  }));
+  const res = await fetch(GROQ_URL, {
+    method:'POST',
+    headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+apiKey },
+    body: JSON.stringify({
+      model: GROQ_MODEL, max_tokens: 500,
+      messages:[ { role:'system', content:sys }, ...history ]
+    })
+  });
+  if (!res.ok) {
+    const e = await res.json().catch(()=>({}));
+    throw new Error(e.error?.message || 'HTTP '+res.status);
+  }
+  const data = await res.json();
+  return data.choices?.[0]?.message?.content || 'No response.';
+}
+
+// ── TTS ───────────────────────────────────────────────────
+function loadVoices() {
+  voices = synth.getVoices().filter(v => v.lang.startsWith('en'));
+  const sel = document.getElementById('voiceSel');
+  if (!sel) return;
+  sel.innerHTML = '';
+  if (!voices.length) { sel.innerHTML = '<option>No voices found</option>'; return; }
+  voices.forEach((v,i) => {
+    const o = document.createElement('option');
+    o.value = i; o.textContent = v.name+' ('+v.lang+')';
+    if (v.name.includes('Samantha')||v.name.includes('Female')||v.name.includes('Google UK English Female')) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+synth.onvoiceschanged = loadVoices;
+
+function speakText(text, bubbleEl) {
+  synth.cancel(); clearPlayingBubble();
+  const clean = text.replace(/\[Feedback:.*?\]/gs,'').replace(/[*_#`]/g,'').trim();
+  if (!clean) return;
+  const u = new SpeechSynthesisUtterance(clean);
+  const sel = document.getElementById('voiceSel');
+  if (sel && voices[sel.value]) u.voice = voices[sel.value];
+  u.rate  = parseFloat(document.getElementById('rateR')?.value||1);
+  u.pitch = parseFloat(document.getElementById('pitchR')?.value||1);
+  u.lang  = 'en-US';
+  isSpeaking = true; playingBubble = bubbleEl;
+  if (bubbleEl) bubbleEl.classList.add('playing');
+  setAudioBtn(true); setStatus('speaking','Speaking…');
+  u.onend = u.onerror = () => { isSpeaking=false; clearPlayingBubble(); setAudioBtn(false); setStatus('ready','Ready'); };
+  synth.speak(u);
+}
+
+function toggleAudio() {
+  if (isSpeaking) { synth.cancel(); isSpeaking=false; clearPlayingBubble(); setAudioBtn(false); setStatus('ready','Ready'); }
+}
+
+function clearPlayingBubble() {
+  if (playingBubble) { playingBubble.classList.remove('playing'); playingBubble=null; }
+}
+
+function setAudioBtn(playing) {
+  const btn = document.getElementById('audioBtn');
+  btn.disabled = false;
+  if (playing) { btn.classList.add('playing'); btn.textContent='⏹'; btn.title='Stop'; }
+  else {
+    btn.classList.remove('playing'); btn.textContent='🔊'; btn.title='Replay';
+    btn.disabled = !getConv(currentId)?.messages?.some(m=>m.role==='ai');
+  }
+}
+
+// ── STT ───────────────────────────────────────────────────
+function initRecognition() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showToast('❌ Use Chrome for voice input'); return null; }
+  const r = new SR();
+  r.lang='en-US'; r.interimResults=true; r.continuous=false;
+  r.onresult = e => {
+    const t = Array.from(e.results).map(x=>x[0].transcript).join('');
+    document.getElementById('trTxt').textContent = t;
+    document.getElementById('transcript').classList.add('live');
+    if (e.results[e.results.length-1].isFinal) document.getElementById('textIn').value = t;
+  };
+  r.onerror = e => { showToast('Mic: '+e.error); stopListening(); };
+  r.onend   = () => { stopListening(); const v=document.getElementById('textIn').value.trim(); if(v) sendMessage(); };
+  return r;
+}
+
+function toggleMic() {
+  if (isListening) { stopListening(); return; }
+  synth.cancel(); isSpeaking=false; clearPlayingBubble(); setAudioBtn(false);
+  recognition = initRecognition();
+  if (!recognition) return;
+  isListening = true; recognition.start();
+  document.getElementById('micBtn').classList.add('on');
+  document.getElementById('micBtn').textContent='⏹';
+  document.getElementById('transcript').classList.add('live');
+  document.getElementById('trTxt').textContent='🔴 Listening — speak now…';
+  setStatus('listening','Listening…');
+}
+
+function stopListening() {
+  isListening=false;
+  if (recognition) { recognition.stop(); recognition=null; }
+  document.getElementById('micBtn').classList.remove('on');
+  document.getElementById('micBtn').textContent='🎤';
+  document.getElementById('transcript').classList.remove('live');
+  setStatus('ready','Ready');
+}
+
+function resetTranscript() {
+  document.getElementById('trTxt').textContent='🎙 Press the mic and speak…';
+  document.getElementById('transcript').classList.remove('live');
+}
+
+// ── UI HELPERS ────────────────────────────────────────────
+function appendBubble(role, text, scroll=true) {
+  const c = document.getElementById('messages');
+  const row = document.createElement('div');
+  row.className = 'msg '+role;
+
+  const av = document.createElement('div');
+  av.className = 'msg-avatar';
+  if (role==='ai') {
+    av.innerHTML = '<svg viewBox="0 0 100 100" style="width:100%;height:100%;border-radius:50%"><use href="#loomie-avatar"/></svg>';
+  } else {
+    av.innerHTML = '<span>👤</span>';
+  }
+
+  const bw = document.createElement('div');
+  bw.className = 'bwrap';
+  const bub = document.createElement('div');
+  bub.className = 'bubble';
+
+  if (role==='ai') {
+    const fm = text.match(/\[Feedback:(.*?)\]/s);
+    const main = text.replace(/\[Feedback:.*?\]/s,'').trim();
+    bub.innerHTML = `<span class="spk-hint">🔊</span>${esc(main)}`;
+    if (fm) {
+      const tag = document.createElement('div');
+      tag.className='fb-tag';
+      tag.textContent='✏️ '+fm[1].trim();
+      bub.appendChild(tag);
+    }
+    bub.addEventListener('click', () => speakText(text, bub));
+  } else {
+    bub.textContent = text;
+  }
+
+  bw.appendChild(bub);
+  row.appendChild(av); row.appendChild(bw);
+  c.appendChild(row);
+  if (scroll) c.scrollTop = c.scrollHeight;
+  return bub;
+}
+
+let tc=0;
+function appendTyping() {
+  const id='ty_'+(++tc);
+  const c=document.getElementById('messages');
+  const d=document.createElement('div');
+  d.className='msg ai'; d.id=id;
+  d.innerHTML=`<div class="msg-avatar"><svg viewBox="0 0 100 100" style="width:100%;height:100%;border-radius:50%"><use href="#loomie-avatar"/></svg></div>
+    <div class="bwrap"><div class="typing-wrap"><div class="td"></div><div class="td"></div><div class="td"></div></div></div>`;
+  c.appendChild(d); c.scrollTop=c.scrollHeight;
+  return id;
+}
+function removeTyping(id) { document.getElementById(id)?.remove(); }
+
+function setMode(m) {
+  currentMode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('mb-'+m)?.classList.add('active');
+  document.getElementById('headerMode').textContent = MODES[m].header;
+  const conv=getConv(currentId);
+  if (conv) { conv.mode=m; saveConvs(); }
+  showToast('Mode: '+MODES[m].label);
+}
+
+function setStatus(state,text) {
+  document.getElementById('sTxt').textContent=text;
+  const d=document.getElementById('sDot');
+  d.className='s-dot '+(state!=='ready'?state:'');
+}
+
+function toggleVP() {
+  const p=document.getElementById('vp');
+  const a=document.getElementById('vpArr');
+  const o=p.classList.toggle('open');
+  a.textContent=o?'▴':'▾';
+}
+
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000);
+}
+
+// ── DROPDOWN ─────────────────────────────────────────────
+function openDD(id, btn) {
+  ddTargetId=id;
+  const dd=document.getElementById('dropdown');
+  const r=btn.getBoundingClientRect();
+  dd.style.top=(r.bottom+4)+'px';
+  dd.style.left=(r.right-155)+'px';
+  dd.classList.add('show');
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest('.conv-dots')&&!e.target.closest('.dropdown'))
+    document.getElementById('dropdown').classList.remove('show');
+});
+
+function renameConv() {
+  document.getElementById('dropdown').classList.remove('show');
+  const conv=getConv(ddTargetId); if(!conv) return;
+  const item=document.querySelector(`.conv-item[data-id="${ddTargetId}"] .conv-item-name`);
+  if(!item) return;
+  const old=conv.name;
+  item.contentEditable='true'; item.focus();
+  const rng=document.createRange(); rng.selectNodeContents(item);
+  window.getSelection().removeAllRanges(); window.getSelection().addRange(rng);
+  const finish=()=>{ item.contentEditable='false'; const n=item.textContent.trim()||old; item.textContent=n; conv.name=n; saveConvs(); };
+  item.addEventListener('blur',finish,{once:true});
+  item.addEventListener('keydown',e=>{ if(e.key==='Enter'){e.preventDefault();item.blur();} if(e.key==='Escape'){item.textContent=old;item.blur();} },{once:true});
+}
+
+function deleteConfirm() {
+  document.getElementById('dropdown').classList.remove('show');
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+function closeConfirm() { document.getElementById('confirmOverlay').classList.remove('show'); }
+function deleteConvDo() {
+  closeConfirm();
+  conversations=conversations.filter(c=>c.id!==ddTargetId);
+  saveConvs();
+  if (ddTargetId===currentId) { if(conversations.length) loadConv(conversations[0].id); else newConversation(); }
+  renderConvList();
+}
+document.getElementById('confirmOverlay').addEventListener('click',function(e){ if(e.target===this)closeConfirm(); });
+
+// ── MOBILE SIDEBAR ────────────────────────────────────────
+function openSidebar() {
+  document.getElementById('sidebar').classList.add('open');
+  document.getElementById('sbOverlay').classList.add('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sbOverlay').classList.remove('show');
+}
+</script>
+</body>
+</html>
