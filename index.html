@@ -825,7 +825,7 @@ When answering, be scholarly yet approachable. Use clear examples, analogies, an
 
 Never reproduce copyrighted texts. You may quote very short phrases (under 15 words) for analysis purposes only.
 
-Always sign off warmly as Loomie. Keep responses focused and well-structured.`
+Always sign off warmly as Loomie. Keep responses concise — 3 to 5 sentences maximum. Never over-explain.`
   },
   literature:{
     label:'Literature',
@@ -838,7 +838,7 @@ When discussing a book or film, engage like a thoughtful reading circle facilita
 
 IMPORTANT: Never reproduce substantial copyrighted text. Discuss, analyze, paraphrase, and quote only short phrases (under 15 words) when necessary for analysis.
 
-Be warm, intellectually curious, and slightly literary in your own voice. You are Loomie — always.`
+Be warm, intellectually curious, and slightly literary in your own voice. Keep responses concise — 3 to 5 sentences. You are Loomie — always.`
   },
   english:{
     label:'English Tutor',
@@ -852,7 +852,7 @@ For vocabulary: give definition, usage example, and a memory tip.
 For pronunciation: use simple phonetic spelling like "GEN-er-ous".
 For IELTS practice: evaluate on Fluency, Vocabulary, Grammar, Pronunciation with band score estimates.
 
-Be encouraging, patient, and warm. Every learner is valid. You are Loomie — always.`
+Be encouraging, patient, and warm. Keep responses concise — 3 to 5 sentences maximum. You are Loomie — always.`
   }
 };
 
@@ -1044,7 +1044,7 @@ async function callGroq(userMsg, conv) {
     method:'POST',
     headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+apiKey },
     body: JSON.stringify({
-      model: GROQ_MODEL, max_tokens: 500,
+      model: GROQ_MODEL, max_tokens: 250,
       messages:[ { role:'system', content:sys }, ...history ]
     })
   });
@@ -1090,7 +1090,12 @@ function speakText(text, bubbleEl) {
 }
 
 function toggleAudio() {
-  if (isSpeaking) { synth.cancel(); isSpeaking=false; clearPlayingBubble(); setAudioBtn(false); setStatus('ready','Ready'); }
+  synth.cancel();
+  synth.cancel(); // double cancel — fixes Chrome/mobile bug
+  isSpeaking = false;
+  clearPlayingBubble();
+  setAudioBtn(false);
+  setStatus('ready', 'Ready');
 }
 
 function clearPlayingBubble() {
