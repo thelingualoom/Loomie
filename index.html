@@ -488,6 +488,49 @@ body{
 .ibtn-audio.playing{background:var(--sage-pale);color:var(--forest);border-color:var(--forest)}
 .ibtn-audio:disabled{opacity:.35;cursor:not-allowed}
 
+/* edit button on user messages */
+.msg-edit-btn{
+  display:none;
+  background:transparent;border:none;
+  color:var(--muted2);cursor:pointer;
+  font-size:0.85rem;padding:2px 6px;
+  border-radius:5px;align-self:flex-end;
+  transition:all 0.15s;margin-top:2px;
+}
+.msg.user:hover .msg-edit-btn{display:block}
+.msg-edit-btn:hover{color:var(--forest);background:var(--sage-pale)}
+
+/* inline edit box */
+.msg-edit-wrap{
+  display:flex;flex-direction:column;gap:6px;
+  align-items:flex-end;width:100%;
+}
+.msg-edit-input{
+  width:100%;padding:9px 13px;
+  border:1.5px solid var(--forest);
+  border-radius:10px;border-bottom-right-radius:4px;
+  background:var(--beige);
+  font-family:'Jost',sans-serif;font-size:0.88rem;
+  color:var(--ink);outline:none;resize:none;
+  box-shadow:0 0 0 3px var(--green-glow);
+  min-height:60px;
+}
+.msg-edit-actions{display:flex;gap:6px}
+.msg-edit-save{
+  padding:6px 14px;background:var(--forest);color:white;
+  border:none;border-radius:7px;
+  font-family:'Jost',sans-serif;font-size:0.8rem;font-weight:600;
+  cursor:pointer;transition:all 0.15s;
+}
+.msg-edit-save:hover{background:var(--forest2)}
+.msg-edit-cancel{
+  padding:6px 12px;background:var(--beige2);color:var(--muted);
+  border:1px solid var(--border2);border-radius:7px;
+  font-family:'Jost',sans-serif;font-size:0.8rem;
+  cursor:pointer;transition:all 0.15s;
+}
+.msg-edit-cancel:hover{background:var(--beige3);color:var(--ink2)}
+  
 /* dropdown */
 .dropdown{
   position:fixed;z-index:500;
@@ -1117,15 +1160,22 @@ function initRecognition() {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { showToast('❌ Use Chrome for voice input'); return null; }
   const r = new SR();
-  r.lang='en-US'; r.interimResults=true; r.continuous=false;
+  r.lang='en-US'; r.interimResults=true; r.continuous=true;
   r.onresult = e => {
     const t = Array.from(e.results).map(x=>x[0].transcript).join('');
     document.getElementById('trTxt').textContent = t;
     document.getElementById('transcript').classList.add('live');
-    if (e.results[e.results.length-1].isFinal) document.getElementById('textIn').value = t;
+    // update input box live as you speak
+    document.getElementById('textIn').value = t;
   };
-  r.onerror = e => { showToast('Mic: '+e.error); stopListening(); };
-  r.onend   = () => { stopListening(); const v=document.getElementById('textIn').value.trim(); if(v) sendMessage(); };
+  r.onerror = e => {
+    if (e.error === 'no-speech') return; // ignore silence, keep listening
+    showToast('Mic: '+e.error); stopListening();
+  };
+  r.onend = () => {
+    // only restart if still supposed to be listening (keeps it alive)
+    if (isListening) { try { r.start(); } catch(e){} }
+  };
   return r;
 }
 
@@ -1149,6 +1199,9 @@ function stopListening() {
   document.getElementById('micBtn').textContent='🎤';
   document.getElementById('transcript').classList.remove('live');
   setStatus('ready','Ready');
+  // auto-send whatever was captured when mic is released
+  const v = document.getElementById('textIn').value.trim();
+  if (v) sendMessage();
 }
 
 function resetTranscript() {
@@ -1186,8 +1239,15 @@ function appendBubble(role, text, scroll=true) {
       bub.appendChild(tag);
     }
     bub.addEventListener('click', () => speakText(text, bub));
-  } else {
+} else {
     bub.textContent = text;
+    // add edit button to user messages
+    const editBtn = document.createElement('button');
+    editBtn.className = 'msg-edit-btn';
+    editBtn.innerHTML = '✎';
+    editBtn.title = 'Edit & resend';
+    editBtn.onclick = () => startEditMessage(bub, editBtn, text, row);
+    bw.appendChild(editBtn);
   }
 
   bw.appendChild(bub);
@@ -1241,6 +1301,82 @@ function showToast(msg) {
   clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),3000);
 }
 
+// ── EDIT MESSAGE ─────────────────────────────────────────
+function startEditMessage(bub, editBtn, originalText, row) {
+  // build inline editor replacing the bubble
+  const bw = bub.parentElement;
+  bw.innerHTML = ''; // clear bubble and edit button
+
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-edit-wrap';
+
+  const textarea = document.createElement('textarea');
+  textarea.className = 'msg-edit-input';
+  textarea.value = originalText;
+
+  const actions = document.createElement('div');
+  actions.className = 'msg-edit-actions';
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'msg-edit-save';
+  saveBtn.textContent = '↗ Resend';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'msg-edit-cancel';
+  cancelBtn.textContent = 'Cancel';
+
+  // Cancel — restore original bubble
+  cancelBtn.onclick = () => {
+    bw.innerHTML = '';
+    const restoredBub = document.createElement('div');
+    restoredBub.className = 'bubble';
+    restoredBub.textContent = originalText;
+    const restoredBtn = document.createElement('button');
+    restoredBtn.className = 'msg-edit-btn';
+    restoredBtn.innerHTML = '✎';
+    restoredBtn.title = 'Edit & resend';
+    restoredBtn.onclick = () => startEditMessage(restoredBub, restoredBtn, originalText, row);
+    bw.appendChild(restoredBub);
+    bw.appendChild(restoredBtn);
+  };
+
+  // Save — remove this message and all after it, resend
+  saveBtn.onclick = async () => {
+    const newText = textarea.value.trim();
+    if (!newText) return;
+
+    const conv = getConv(currentId);
+    if (!conv) return;
+
+    // Find index of the original message in conv.messages
+    const msgIdx = conv.messages.findIndex(m => m.role==='user' && m.text===originalText);
+
+    // Remove from that point onward in data
+    if (msgIdx !== -1) conv.messages = conv.messages.slice(0, msgIdx);
+    saveConvs();
+
+    // Remove from that point onward in DOM
+    const allRows = document.getElementById('messages').querySelectorAll('.msg');
+    let found = false;
+    allRows.forEach(r => {
+      if (r === row) found = true;
+      if (found) r.remove();
+    });
+
+    // Put new text in input and send
+    document.getElementById('textIn').value = newText;
+    await sendMessage();
+  };
+
+  actions.appendChild(cancelBtn);
+  actions.appendChild(saveBtn);
+  wrap.appendChild(textarea);
+  wrap.appendChild(actions);
+  bw.appendChild(wrap);
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+}
+  
 // ── DROPDOWN ─────────────────────────────────────────────
 function openDD(id, btn) {
   ddTargetId=id;
